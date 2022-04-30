@@ -33,16 +33,16 @@ local function getRaceDataPointer()
 end
 Pointers.getRaceDataPointer = getRaceDataPointer
 
-local function getRaceData2Pointer(Offset)
-  local raceData2
-  if GetGameID() == "RMCP01" then raceData2 = 0x9BD730
-  elseif GetGameID() == "RMCE01"then raceData2 = 0x9B8F70
-  elseif GetGameID() == "RMCJ01" then raceData2 = 0x9BC790
-  elseif GetGameID() == "RMCK01" then raceData2 = 0x9ABD70
+local function getRaceInfoPointer(Offset)
+  local raceInfo
+  if GetGameID() == "RMCP01" then raceInfo = 0x9BD730
+  elseif GetGameID() == "RMCE01"then raceInfo = 0x9B8F70
+  elseif GetGameID() == "RMCJ01" then raceInfo = 0x9BC790
+  elseif GetGameID() == "RMCK01" then raceInfo = 0x9ABD70
   end
-  return GetPointerNormal(raceData2, 0xC, Offset)
+  return GetPointerNormal(raceInfo, 0xC, Offset)
 end
-Pointers.getRaceData2Pointer = getRaceData2Pointer
+Pointers.getRaceInfoPointer = getRaceInfoPointer
 
 local function getInputPointer(Offset)
   return ReadValue32(getRaceData2Pointer(Offset), 0x48, 0x4)
