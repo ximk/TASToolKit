@@ -74,7 +74,7 @@ function onScriptUpdate()
 	end
 	
 	
-	if core.getVehicle() == "Flame Runner" or core.getVehicle() == "Zip Zip" then 
+	if core.getVehicle() == "Flame Runner" then 
 		if core.getFrameOfInput() <= 12  then SetMainStickX(255) PressButton("A")                                           -- -7 and A for 12 frames
 		elseif core.getFrameOfInput() == 13 then SetMainStickX(255) PressButton("D-Up") PressButton("A")                    -- -7, A And wheelie
 		elseif core.getFrameOfInput() >= 14 and core.getFrameOfInput() < 33 then SetMainStickX(1) PressButton("A")      -- +7 and A for 19 frames
@@ -100,7 +100,7 @@ function onScriptUpdate()
 		end
 	end
 	
-	if core.getVehicle() == "Shooting Star" or core.getVehicle() == "Magikruiser" or core.getVehicle() == "Quacker" or core.getVehicle() == "Dolphin Dasher" or core.getVehicle() == "Bit Bike" or core.getVehicle() == "Sugarscoot" then -- last 2 are guesses
+	if core.getVehicle() == "Shooting Star" or core.getVehicle() == "Magikruiser" or core.getVehicle() == "Quacker" or core.getVehicle() == "Dolphin Dasher" or core.getVehicle() == "Bit Bike" or core.getVehicle() == "Sugarscoot" or core.getVehicle() == "Standard Bike S" or core.getVehicle() == "Standard Bike M" or core.getVehicle() == "Standard Bike L" or core.getVehicle() == "Zip Zip" then
 		if core.getFrameOfInput() <= 2 then SetMainStickX(205) SetMainStickY(128)
 		elseif core.getFrameOfInput() <= 13 then SetMainStickX(205) SetMainStickY(128) PressButton("A")
 		elseif core.getFrameOfInput() == 14 then SetMainStickX(59) SetMainStickY(128) PressButton("D-Up") PressButton("A")
@@ -179,7 +179,7 @@ function onScriptUpdate()
 		end
 	end
 	
-	if core.getVehicle() == "Sneakster" or core.getVehicle() == "Spear" or core.getVehicle() == "Phantom" or core.getVehicle() == "Jet Bubble" or core.getVehicle() == "Wario Bike"  then -- last 2 are guesses
+	if core.getVehicle() == "Sneakster" or core.getVehicle() == "Spear" or core.getVehicle() == "Phantom" or core.getVehicle() == "Jet Bubble" or core.getVehicle() == "Wario Bike" then
 		if core.getFrameOfInput() <= 19 then SetMainStickX(205) SetMainStickY(128)
 		elseif core.getFrameOfInput() == 20 then SetMainStickX(59) SetMainStickY(128) PressButton("D-Up")
 		elseif core.getFrameOfInput() <= 23 then SetMainStickX(59) SetMainStickY(128)
