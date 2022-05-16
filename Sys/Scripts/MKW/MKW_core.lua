@@ -194,7 +194,6 @@ core.getSpdGhost = getSpdGhost
 
 local function getInput()
   local address = Pointers.getInputPointer(0x0)
-  local address = Pointers.getInputPointer(0x0) -- change this to 0x4 for ghost
   local offset = 0x8 -- too lazy to adjust the values beneath...
 
   if address == 0 then return {ABLR = 0, X = 0, Y = 0, DPAD = 0}
