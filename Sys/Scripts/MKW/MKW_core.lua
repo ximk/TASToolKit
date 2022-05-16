@@ -135,7 +135,7 @@ end
 core.getVehicle = getVehicle
 
 local function getPos()
-  local address = Pointers.getPlayerPhysicsPointer(0x0) -- 0x0 first player in the array, to get the most accurate, read playerindex first
+  local address = Pointers.getPositionPointer(0x0) -- 0x0 first player in the array, to get the most accurate, read playerindex first
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -144,7 +144,7 @@ end
 core.getPos = getPos
 
 local function getPosGhost()
-  local address = Pointers.getPlayerPhysicsPointer(0x4)
+  local address = Pointers.getPositionPointer(0x4)
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -153,7 +153,7 @@ end
 core.getPosGhost = getPosGhost
 
 local function getPrevPos()
-  local address = Pointers.getPlayerPhysicsHolderPointer(0x0)
+  local address = Pointers.getPrevPositionPointer(0x0)
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -162,7 +162,7 @@ end
 core.getPrevPos = getPrevPos
 
 local function getPrevPosGhost()
-  local address = Pointers.getPlayerPhysicsHolderPointer(0x4)
+  local address = Pointers.getPrevPositionPointer(0x4)
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -194,6 +194,7 @@ core.getSpdGhost = getSpdGhost
 
 local function getInput()
   local address = Pointers.getInputPointer(0x0)
+  local address = Pointers.getInputPointer(0x0) -- change this to 0x4 for ghost
   local offset = 0x8 -- too lazy to adjust the values beneath...
 
   if address == 0 then return {ABLR = 0, X = 0, Y = 0, DPAD = 0}
@@ -209,7 +210,6 @@ core.getInput = getInput
 local function getInputGhost()
   local address = Pointers.getInputPointer(0x4)
   local offset = 0x8 -- too lazy to adjust the values beneath...
-
   if address == 0 then return {ABLR = 0, X = 0, Y = 0, DPAD = 0}
   else return {
    ABLR = ReadValue8(address + offset + 0x1),
@@ -274,7 +274,7 @@ core.math_atan2 = math_atan2
 
 function getQuaternion()
   local offset2 = 0xF0
-  local address2 = Pointers.getPlayerPhysicsPointer(0x0)
+  local address2 = Pointers.getPositionPointer(0x0)
   if(address2 == 0) then
     return {X = 0, Y = 0, Z = 0, W = 0}
   end
@@ -316,7 +316,7 @@ end
 core.calculateEuler = calculateEuler
 
 local function isSinglePlayer()
-  local address = Pointers.getPlayerPhysicsPointer(0x4)
+  local address = Pointers.getPositionPointer(0x4)
   if address == 0 then return true
   else return false
   end
@@ -409,6 +409,319 @@ local function differenceText(value, errors)
 	end
 end
 core.differenceText = differenceText
+
+local function exactFinish()
+	local address1 = ReadValueFloat(0x1b0)
+	local address2 = ReadValueFloat(0x1b4)
+	local address3 = ReadValueFloat(0x1b8)
+	local basePointer = GetPointerNormal(Pointers.getRaceInfoPointer(0x0), 0x3C)
+    local minaddress1 = ReadValue8(basePointer, 0x0 + 0x4) -- find and add in
+    local minaddress2 = ReadValue8(basePointer, 0xC + 0x4) -- find and add in
+    local minaddress3 = ReadValue8(basePointer, 0x18 + 0x4) -- find and add in
+    local secaddress1 = ReadValue8(basePointer, 0x0 + 0x6) -- find and add in
+    local secaddress2 = ReadValue8(basePointer, 0xC + 0x6) -- find and add in
+    local secaddress3 = ReadValue8(basePointer, 0x18 + 0x6) -- find and add in
+	local frame = getFrameOfInput() - 240
+	local one = 0
+	local two = 0
+	local three = 0
+	local four = 0
+	local onem = 0
+	local twom = 0
+	local threem = 0
+	local fourm = 0
+	
+------- corrections ---------
+if address1 > 999 then secaddress1 = secaddress1 - 1
+end
+if secaddress1 < 0 then secaddress1 = secaddress1 + 60
+end
+if address1 > 999 and secaddress1 == 59 then minaddress1 = minaddress1 - 1
+end
+
+if address2 > 999 then secaddress2 = secaddress2 - 1
+end
+if secaddress2 < 0 then secaddress2 = secaddress2 + 60
+end
+if address2 > 999 and secaddress2 == 59 then minaddress2 = minaddress2 - 1
+end
+
+if address3 > 999 then secaddress3 = secaddress3 - 1
+end
+if secaddress3 < 0 then secaddress3 = secaddress3 + 60
+end
+if address3 > 999 and secaddress3 == 59 then minaddress3 = minaddress3 - 1
+end
+	
+------- seconds and ms (20,40,60) -------
+	if address1 ~= 0 then
+		one = secaddress1+(address1/1000)
+		if address2 ~= 0 then
+			two = (secaddress2-secaddress1)+((address2-address1)/1000)
+			if two < 0 then
+				two = two + 60
+				twom = twom + 1
+			end
+			if address3 ~= 0 then
+			three = (secaddress3-secaddress2)+((address3-address2)/1000)
+				if three < 0 then
+					three = three + 60
+					threem = threem + 1
+				end
+			four = one+two+three
+			fourm = onem+twom+threem
+			end
+		end
+	end
+
+	return {OM = onem, OS = one, TM = twom, TS = two, HM = threem, HS = three, FM = fourm, FS = four}
+end
+core.exactFinish = exactFinish
+
+local function NormalAccel(spd)
+	base = Pointers.getPlayerPointer()
+	local stats = GetPointerNormal(base, 0x14, 0x14, 0x0)
+	local speed = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x20) -- current vehicle speed -- from RMCE01.ini
+	local p1 = ReadValueFloat(stats, 0x48) -- drift acceleration T1
+	local d0 = ReadValueFloat(stats, 0x40) -- drift acceleration A0
+	local d1 = ReadValueFloat(stats, 0x44) -- drift acceleration A1
+	local t1 = ReadValueFloat(stats, 0x34) -- standard acceleration T1
+	local t2 = ReadValueFloat(stats, 0x38) -- standard acceleration T2
+	local t3 = ReadValueFloat(stats, 0x3C) -- standard acceleration T3
+	local a0 = ReadValueFloat(stats, 0x24) -- standard acceleration A0
+	local a1 = ReadValueFloat(stats, 0x28) -- standard acceleration A1
+	local a2 = ReadValueFloat(stats, 0x2C) -- standard acceleration A2
+	local a3 = ReadValueFloat(stats, 0x30) -- standard acceleration A3
+	
+	if speed > 0 and speed <= t1*spd then return ((a1-a0)/(t1*spd)*speed)+a0
+	elseif speed > t1*spd and speed <= t2*spd then return ((a2-a1)/((t2-t1)*spd)*speed)+(a1-((a2-a1)*t1)/(t2-t1))
+	elseif speed > t2*spd and speed <= t3*spd then return ((a3-a2)/((t3-t2)*spd)*speed)+(a2-((a3-a2)*t2)/(t3-t2))
+	elseif speed > t3*spd and speed <= spd-a3 then return a3
+	elseif speed > spd-a3 and speed <= spd then return spd-speed
+	else return 0
+	end
+end
+core.NormalAccel = NormalAccel
+
+local function DriftAccel(spd)
+	base = Pointers.getPlayerPointer()
+	local speed = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x20) -- current vehicle speed -- from RMCE01.ini
+	local p1 = ReadValueFloat(stats, 0x48) -- drift acceleration T1
+	local d0 = ReadValueFloat(stats, 0x40) -- drift acceleration A0
+	local d1 = ReadValueFloat(stats, 0x44) -- drift acceleration A1
+	
+	if speed > 0 and speed <= p1*spd then return ((d1-d0)/(p1*spd)*speed)+d0
+	elseif speed > p1*spd and speed <= spd-d1 then return d1
+	elseif speed > spd-d1 and speed <= spd then return spd-speed
+	else return 0
+	end
+end
+core.DriftAccel = DriftAccel
+
+local function AccelText(spd)
+	base = Pointers.getPlayerPointer()
+	local speed = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x20) -- current vehicle speed -- from RMCE01.ini
+end
+core.AccelText = AccelText
+
+local function detectAction()
+	base = Pointers.getPlayerPointer()
+	local stats = GetPointerNormal(base, 0x14, 0x14, 0x0)
+	local bspeed = ReadValueFloat(stats, 0x18) -- base speed
+	local maxspeed = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x18) -- current max vehicle speed -- from RMCE01.ini
+	local ostat1 = ReadValueFloat(stats, 0x70 + 0x8) -- weak offroad
+	local ostat2 = ReadValueFloat(stats, 0x70 + 0xC) -- regular offroad
+	local ostat3 = ReadValueFloat(stats, 0x70 + 0x10) -- heavy offroad
+	local ostat4 = ReadValueFloat(stats, 0x70 + 0x14) -- slippery offroad
+	local mtboost = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x10C)
+	local trickboost = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x114)
+	local shroomboost = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x110)
+	
+	if maxspeed/bspeed >= 1 then
+		if maxspeed == bspeed then return "No Boost: Handling/Drift"
+		elseif maxspeed == 1.15*bspeed then return "No Boost: Wheelie"
+		elseif maxspeed == 1.2*bspeed then return "Miniturbo Boost"
+		elseif maxspeed == 1.35*bspeed then return "Miniturbo Boost"
+		elseif maxspeed == 1.3*bspeed then return "Trick Boost"
+		elseif maxspeed == 1.45*bspeed then return "Trick Boost"
+		elseif maxspeed == 1.4*bspeed then return "Mushroom Boost"
+		elseif maxspeed == 1.55*bspeed then return "Mushroom Boost"
+		elseif maxspeed == 120 then
+			if mtboost > 0 then
+				if shroomboost > 0 then
+					if trickboost > 0 then return "Trick Boost"
+					else return "Mushroom Boost"
+					end
+				else return "Miniturbo Boost"
+				end
+			elseif shroomboost > 0 then
+				if trickboost > 0 then return "Trick Boost"
+				else return "Mushroom Boost"
+				end
+			elseif trickboost > 0 then return "Trick Boost"
+			end
+		end
+	else
+		if maxspeed == ostat1*bspeed then return "Weak Offroad"
+		elseif maxspeed == 1.15*ostat1*bspeed then return "Weak Offroad"
+		elseif maxspeed == ostat2*bspeed then return "Offroad"
+		elseif maxspeed == 1.15*ostat2*bspeed then return "Offroad"
+		elseif maxspeed == ostat3*bspeed then return "Heavy Offroad"
+		elseif maxspeed == 1.15*ostat3*bspeed then return "Heavy Offroad"
+		elseif maxspeed == ostat4*bspeed then return "Slippery Offroad"
+		elseif maxspeed == 1.15*ostat4*bspeed then return "Slippery Offroad"
+		else return "Against Wall"
+		end
+	end
+end
+core.detectAction = detectAction
+
+local function BoostAccel()
+	local boost = detectAction()
+	
+	if boost == "Miniturbo Boost" then return 3
+	elseif boost == "Trick Boost" then return 6
+	elseif boost == "Mushroom Boost" then return 7
+	else return 0
+	end
+end
+core.BoostAccel = BoostAccel
+
+local function AccelRates()
+	base = Pointers.getPlayerPointer()
+	local stats = GetPointerNormal(base, 0x14, 0x14, 0x0)
+	local speed = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x20) -- current vehicle speed -- from RMCE01.ini
+	local maxspeed = ReadValueFloat(base, 0xC, 0x10, 0x0, 0x10, 0x10, 0x18) -- current max vehicle speed -- from RMCE01.ini
+	local bspeed = ReadValueFloat(stats, 0x18) -- base speed
+	local ostat1 = ReadValueFloat(stats, 0x70 + 0x8) -- weak offroad
+	local ostat2 = ReadValueFloat(stats, 0x70 + 0xC) -- regular offroad
+	local ostat3 = ReadValueFloat(stats, 0x70 + 0x10) -- heavy offroad
+	local ostat4 = ReadValueFloat(stats, 0x70 + 0x14) -- slippery offroad
+	local ospeed1 = bspeed * ostat1
+	local ospeed2 = bspeed * ostat2
+	local ospeed3 = bspeed * ostat3
+	local ospeed4 = bspeed * ostat4
+	local haccel, waccel, daccel, oaccel1, oaccel2, oaccel3, oaccel4, owaccel1, owaccel2 = NormalAccel(bspeed), NormalAccel(bspeed*1.15), DriftAccel(bspeed), NormalAccel(ospeed1), NormalAccel(ospeed2), NormalAccel(ospeed3), NormalAccel(ospeed4), NormalAccel(ospeed1*1.15), NormalAccel(ospeed2*1.15)
+	local owaccel3, owaccel4, odaccel1, odaccel2, odaccel3, odaccel4, baccel, action, note = NormalAccel(ospeed3*1.15), NormalAccel(ospeed4*1.15), DriftAccel(ospeed1), DriftAccel(ospeed2), DriftAccel(ospeed3), DriftAccel(ospeed4), BoostAccel(), detectAction(), ""
+	
+	if speed <= 0.55*bspeed then note = "Below 55% Spd"
+		if speed < 0 then note = "Below 0 Spd"
+		end
+	else note = ""
+	end
+	
+	return {H = haccel, W = waccel, D = daccel, WO = oaccel1, WOW = owaccel1, WOD = odaccel1, O = oaccel2, OW = owaccel2, OD = odaccel2, HO = oaccel3, HOW = owaccel3, HOD = odaccel3, SO = oaccel4, SOW = owaccel4, SOD = odaccel4, B = baccel, A = action, N = note}
+
+end
+core.AccelRates = AccelRates
+
+local function translateKCL()
+
+	local gameID = GetGameID()
+		if gameID == "RMCP01" then
+			collisionAddress1 = 0x9C38DC
+			collisionAddress2 = 0x9C38E8
+		elseif gameID == "RMCE01" then
+			collisionAddress1 = 0x9BF0D4
+			collisionAddress2 = 0x9BF0E0
+		elseif gameID == "RMCJ01" then
+			collisionAddress1 = 0x9C293C
+			collisionAddress2 = 0x9C2948
+		elseif gameID == "RMCK01" then
+			collisionAddress1 = 0x9B1F1C
+			collisionAddress2 = 0x9B1F28
+	end
+
+	local writeAddress1 = 0x1500000
+	local writeAddress2 = 0x1500008
+	local rawCollisionValue1 = ReadValue16(collisionAddress1)
+	local rawCollisionValue2 = ReadValue16(collisionAddress2)
+	local collisionValue1 = rawCollisionValue1 % 0x20
+	local collisionValue2 = rawCollisionValue2 % 0x20
+	local collisionType1 = ""
+	local collisionType2 = ""
+	
+	if rawCollisionValue1/0x8000 >= 1 then collisionType1 = "SticWall"
+	elseif rawCollisionValue1/0x4000 >= 1 then collisionType1 = "PushAway"
+	elseif rawCollisionValue1/0x2000 >= 1 then collisionType1 = "TrickRod"
+	else
+		if collisionValue1 == 0x0 then collisionType1 = "Road"
+		elseif collisionValue1 == 0x1 then collisionType1 = "SlipRoad"
+		elseif collisionValue1 == 0x2 then collisionType1 = "WOffRoad"
+		elseif collisionValue1 == 0x3 then collisionType1 = "Off-Road"
+		elseif collisionValue1 == 0x4 then collisionType1 = "HOffRoad"
+		elseif collisionValue1 == 0x5 then collisionType1 = "SlipRoad"
+		elseif collisionValue1 == 0x6 then collisionType1 = "BoostPad"
+		elseif collisionValue1 == 0x7 then collisionType1 = "B-Ramp"
+		elseif collisionValue1 == 0x8 then collisionType1 = "JumpPad "
+		elseif collisionValue1 == 0x9 then collisionType1 = "ItemRoad"
+		elseif collisionValue1 == 0xA then collisionType1 = "SoldFall"
+		elseif collisionValue1 == 0xB then collisionType1 = "MovWater" --KC River
+		elseif collisionValue1 == 0xC then collisionType1 = "Wall"
+		elseif collisionValue1 == 0xD then collisionType1 = "InvWall "
+		elseif collisionValue1 == 0xE then collisionType1 = "ItemWall"
+		elseif collisionValue1 == 0xF then collisionType1 = "Wall"
+		elseif collisionValue1 == 0x10 then collisionType1 = "FallBoun"
+		elseif collisionValue1 == 0x11 then collisionType1 = "CannonTr"
+		elseif collisionValue1 == 0x12 then collisionType1 = "ReCalc" --enemy/item route based
+		elseif collisionValue1 == 0x13 then collisionType1 = "HalfPipe"
+		elseif collisionValue1 == 0x14 then collisionType1 = "Wall"
+		elseif collisionValue1 == 0x15 then collisionType1 = "MoveRoad" --TF belt, CM escalator
+		elseif collisionValue1 == 0x16 then collisionType1 = "SticRoad"
+		elseif collisionValue1 == 0x17 then collisionType1 = "Road"
+		elseif collisionValue1 == 0x18 then collisionType1 = "SoundTrg"
+		elseif collisionValue1 == 0x19 then collisionType1 = "Unknown?"
+		elseif collisionValue1 == 0x1A then collisionType1 = "EffectTr"
+		elseif collisionValue1 == 0x1B then collisionType1 = "Unknown?"
+		elseif collisionValue1 == 0x1C then collisionType1 = "Unknown?"
+		elseif collisionValue1 == 0x1D then collisionType1 = "SlipRoad"
+		elseif collisionValue1 == 0x1E then collisionType1 = "SpecWall"
+		elseif collisionValue1 == 0x1F then collisionType1 = "Wall" --items can get through
+		end
+	end
+
+	if rawCollisionValue2/0x8000 >= 1 then collisionType2 = "SticWall"
+	elseif rawCollisionValue2/0x4000 >= 1 then collisionType2 = "PushAway"
+	elseif rawCollisionValue2/0x2000 >= 1 then collisionType2 = "TrickRod"
+	else
+		if collisionValue2 == 0x0 then collisionType2 = "Road"
+		elseif collisionValue2 == 0x1 then collisionType2 = "SlipRoad"
+		elseif collisionValue2 == 0x2 then collisionType2 = "WOffRoad"
+		elseif collisionValue2 == 0x3 then collisionType2 = "Off-Road"
+		elseif collisionValue2 == 0x4 then collisionType2 = "HOffRoad"
+		elseif collisionValue2 == 0x5 then collisionType2 = "SlipRoad"
+		elseif collisionValue2 == 0x6 then collisionType2 = "BoostPad"
+		elseif collisionValue2 == 0x7 then collisionType2 = "B-Ramp"
+		elseif collisionValue2 == 0x8 then collisionType2 = "JumpPad"
+		elseif collisionValue2 == 0x9 then collisionType2 = "ItemRoad"
+		elseif collisionValue2 == 0xA then collisionType2 = "SoldFall"
+		elseif collisionValue2 == 0xB then collisionType2 = "MovWater" --KC River
+		elseif collisionValue2 == 0xC then collisionType2 = "Wall"
+		elseif collisionValue2 == 0xD then collisionType2 = "InvWall"
+		elseif collisionValue2 == 0xE then collisionType2 = "ItemWall"
+		elseif collisionValue2 == 0xF then collisionType2 = "Wall"
+		elseif collisionValue2 == 0x10 then collisionType2 = "FallBoun"
+		elseif collisionValue2 == 0x11 then collisionType2 = "CannonTr"
+		elseif collisionValue2 == 0x12 then collisionType2 = "ReCalc" --enemy/item route based
+		elseif collisionValue2 == 0x13 then collisionType2 = "HalfPipe"
+		elseif collisionValue2 == 0x14 then collisionType2 = "Wall"
+		elseif collisionValue2 == 0x15 then collisionType2 = "MoveRoad" --TF belt, CM escalator
+		elseif collisionValue2 == 0x16 then collisionType2 = "SticRoad"
+		elseif collisionValue2 == 0x17 then collisionType2 = "Road"
+		elseif collisionValue2 == 0x18 then collisionType2 = "SoundTrg"
+		elseif collisionValue2 == 0x19 then collisionType2 = "Unknown?"
+		elseif collisionValue2 == 0x1A then collisionType2 = "EffectTr"
+		elseif collisionValue2 == 0x1B then collisionType2 = "Unknown?"
+		elseif collisionValue2 == 0x1C then collisionType2 = "Unknown?"
+		elseif collisionValue2 == 0x1D then collisionType2 = "SlipRoad"
+		elseif collisionValue2 == 0x1E then collisionType2 = "SpecWall"
+		elseif collisionValue2 == 0x1F then collisionType2 = "Wall" --items can get through
+		end
+	end
+	
+	return {A1 = writeAddress1, A2 = writeAddress2, T1 = collisionType1, T2 = collisionType2}
+end
+core.translateKCL = translateKCL
 
 local function exactFinish()
 	local address1 = ReadValueFloat(0x1b0)
