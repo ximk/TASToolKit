@@ -135,7 +135,7 @@ end
 core.getVehicle = getVehicle
 
 local function getPos()
-  local address = Pointers.getPositionPointer(0x0) -- 0x0 first player in the array, to get the most accurate, read playerindex first
+  local address = Pointers.getPlayerPhysicsPointer(0x0) -- 0x0 first player in the array, to get the most accurate, read playerindex first
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -144,7 +144,7 @@ end
 core.getPos = getPos
 
 local function getPosGhost()
-  local address = Pointers.getPositionPointer(0x4)
+  local address = Pointers.getPlayerPhysicsPointer(0x4)
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -153,7 +153,7 @@ end
 core.getPosGhost = getPosGhost
 
 local function getPrevPos()
-  local address = Pointers.getPrevPositionPointer(0x0)
+  local address = Pointers.getPlayerPhysicsHolderPointer(0x0)
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -162,7 +162,7 @@ end
 core.getPrevPos = getPrevPos
 
 local function getPrevPosGhost()
-  local address = Pointers.getPrevPositionPointer(0x4)
+  local address = Pointers.getPlayerPhysicsHolderPointer(0x4)
   if address == 0 then
     return {X = 0, Y = 0, Z = 0}
   end
@@ -273,7 +273,7 @@ core.math_atan2 = math_atan2
 
 function getQuaternion()
   local offset2 = 0xF0
-  local address2 = Pointers.getPositionPointer(0x0)
+  local address2 = Pointers.getPlayerPhysicsPointer(0x0)
   if(address2 == 0) then
     return {X = 0, Y = 0, Z = 0, W = 0}
   end
@@ -315,7 +315,7 @@ end
 core.calculateEuler = calculateEuler
 
 local function isSinglePlayer()
-  local address = Pointers.getPositionPointer(0x4)
+  local address = Pointers.getPlayerPhysicsPointer(0x4)
   if address == 0 then return true
   else return false
   end
