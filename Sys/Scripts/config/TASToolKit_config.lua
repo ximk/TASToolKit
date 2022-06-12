@@ -1,7 +1,7 @@
 local TTK_config = {}
 
 -- enables [-7, 7] clamp instead of [0, 14]
-TTK_config.useNegativeStickInput = false
+TTK_config.useNegativeStickInput = true
 
 -- uses R button instead of B button to drift when enabled
 TTK_config.useRbutton = false
