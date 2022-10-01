@@ -51,15 +51,3 @@ function onScriptUpdate()
 	
 	prevFrame = currentFrame
 end
-
-function onStateLoaded()
-
-end
-
-function onStateSaved()
-
-end
-
-function onScriptCancel()
-
-end
